@@ -1,0 +1,14 @@
+<h1>Список сотрудников</h1>
+<ul>
+{% for emp in employees %}
+    <li>
+        <a href="{% url 'employee_detail' emp.pk %}">
+            <div>
+                <strong>{{ emp.first_name }} {{ emp.last_name }}</strong><br>
+                Навыки: {{ emp.skills }}<br>
+            </div>
+        </a>
+    </li>
+{% endfor %}
+</ul>
+<a href="{% url 'home' %}">На главную</a>

@@ -1,0 +1,22 @@
+<h1>{{ employee.first_name }} {{ employee.last_name }}</h1>
+<p>Пол: {{ employee.get_gender_display }}</p>
+<p>Навыки: {{ employee.skills }}</p>
+
+<h2>Галерея изображений</h2>
+{% if employee.images.all %}
+<ul>
+{% for img in employee.images.all %}
+    <li><img src="{{ img.image.url }}" width="200"></li>
+{% endfor %}
+</ul>
+{% else %}
+<p>Нет изображений.</p>
+{% endif %}
+
+{% if user.is_authenticated %}
+<p><a href="#">Редактировать профиль (заглушка)</a></p>
+{% else %}
+<p>Для редактирования войдите в систему.</p>
+{% endif %}
+
+<a href="{% url 'employee_list' %}">Назад к списку</a>
