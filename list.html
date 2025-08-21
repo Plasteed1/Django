@@ -1,0 +1,27 @@
+<h1>Список сотрудников</h1>
+
+<div class="employee-cards">
+{% for emp in page_obj %}
+<div class="card">
+  {% if emp.first_image_url %}
+     <img src="{{ emp.first_image_url }}" alt="Фото {{ emp.first_name }}">
+  {% endif %}
+  <h3>{{ emp.first_name }} {{ emp.last_name }}</h3>
+  <p>Должность: {{ emp.position }}</p>
+  <p>Дата приёма: {{ emp.start_date }}</p>
+  <p>Стаж: {{ emp.experience_days }} дней</p>
+</div>
+{% endfor %}
+</div>
+
+<div class="pagination">
+{% if page_obj.has_previous %}
+<a href="?page={{ page_obj.previous_page_number }}">Предыдущая</a>
+{% endif %}
+
+<span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+
+{% if page_obj.has_next %}
+<a href="?page={{ page_obj.next_page_number }}">Следующая</a>
+{% endif %}
+</div>
