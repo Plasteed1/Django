@@ -1,49 +1,47 @@
-from django.shortcuts import render, get_object_or_404
-from django.core.paginator import Paginator
-import datetime
+from rest_framework import viewsets, permissions, filters, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Employee
-def home(request):
-    total_employees = Employee.objects.count()
-    latest_employees = Employee.objects.order_by('-start_date')[:4]
+from .serializers import EmployeeSerializer
+from .permissions import IsAdminOrReadOnly, IsMoverOrReadOnly
+class EmployeeViewSet(viewsets.ModelViewSet):
+    """
+    API для работы с сотрудниками.
+    Поддержка фильтрации, поиска, сортировки и перемещения сотрудников.
+    """
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
 
-    for emp in latest_employees:
-        emp.experience_days = emp.experience_days
-        first_image_obj = emp.images.first()
-        emp.first_image_url = first_image_obj.image.url if first_image_obj else None
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
 
-    context = {
-        'total_employees': total_employees,
-        'latest_employees': latest_employees,
-    }
-    return render(request, 'employees/home.html', context)
+    filterset_fields = ['skills', 'experience_years']
 
+    search_fields = ['name', 'skills']
 
-def employee_list(request):
-    employees_qs = Employee.objects.all().order_by('last_name')
-    paginator = Paginator(employees_qs, 10)
+    ordering_fields = ['name', 'experience_years']
 
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    def get_permissions(self):
+        """
+        Назначение прав доступа в зависимости от действия.
+        """
+        if self.action == 'move':
+            permission_classes = [IsMoverOrReadOnly]
+        elif self.action in ['create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [IsAdminOrReadOnly]
+        else:
+            permission_classes = [permissions.AllowAny]
+        return [permission() for permission in permission_classes]
 
-    for emp in page_obj:
-        emp.experience_days = emp.experience_days
-        first_image_obj = emp.images.first()
-        emp.first_image_url = first_image_obj.image.url if first_image_obj else None
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def move(self, request, pk=None):
+        """
+        Кастомное действие для перемещения сотрудника между столами.
+        Передайте в теле запроса JSON: {"table_number": 5}
+        """
+        employee = self.get_object()
+        table_number = request.data.get('table_number')
+        if table_number is None:
+            return Response({"detail": "Параметр 'table_number' обязателен."}, status=status.HTTP_400_BAD_REQUEST)
 
-    context = {
-        'page_obj': page_obj,
-    }
-    return render(request, 'employees/employee_list.html', context)
-def employee_detail(request, pk):
-    employee = get_object_or_404(Employee, pk=pk)
-    experience_days = employee.experience_days
-    images_qs = employee.images.all()
-    main_image_url = images_qs.first().image.url if images_qs.exists() else None
-    gallery_images = images_qs[1:]
-    context = {
-        'employee': employee,
-        'experience_days': experience_days,
-        'main_image_url': main_image_url,
-        'gallery_images': gallery_images,
-    }
-    return render(request, 'employees/employee_detail.html', context)
+        employee.table_numbe
